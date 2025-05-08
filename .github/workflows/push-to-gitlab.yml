@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Change this to your desired branch
+  workflow_dispatch:
 
 jobs:
   push-to-gitlab:
