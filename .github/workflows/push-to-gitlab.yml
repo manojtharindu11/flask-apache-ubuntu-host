@@ -1,0 +1,25 @@
+name: Push to GitLab
+
+on:
+  push:
+    branches:
+      - main  # Change this to your desired branch
+
+jobs:
+  push-to-gitlab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Git Config
+        run: |
+          git config --global user.name "manojtharindu11"
+          git config --global user.email "thilakarathnawatm.21@uom.com"
+
+      - name: Add GitLab Remote
+        run: |
+          git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/manojtharindu11/flask-apache-ubuntu-host.git
+          git fetch gitlab
+          git push -u gitlab main --force
