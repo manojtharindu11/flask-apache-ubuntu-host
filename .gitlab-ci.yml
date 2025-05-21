@@ -1,6 +1,15 @@
+stages:
+  - build
+
 create_file:
+  stage: build
   image: alpine
   script:
     - echo "Creating a file ..."
     - mkdir build
     - touch build/test.txt
+  artifacts:
+    paths:
+      - build/test.txt
+  rules:
+    - when: always
