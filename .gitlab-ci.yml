@@ -1,20 +1,36 @@
+# stages:
+#   - build
+#   - test
+
+# create_file:
+#   image: alpine
+#   stage: build
+#   script:
+#     - echo "Creating a file ..."
+#     - mkdir build
+#     - touch build/test.txt
+#   artifacts:
+#     paths:
+#       - build/
+
+# test_file:
+#   image: alpine
+#   stage: test
+#   script:
+#     - test -f build/test.txt
 stages:
-  - build
-  - test
+  - deploy
 
-create_file:
-  image: alpine
-  stage: build
+deploy_to_vm:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H 13.60.255.157 >> ~/.ssh/known_hosts
   script:
-    - echo "Creating a file ..."
-    - mkdir build
-    - touch build/test.txt
-  artifacts:
-    paths:
-      - build/
-
-test_file:
-  image: alpine
-  stage: test
-  script:
-    - test -f build/test.txt
+    - echo "Deploying to VM..."
+    - scp -r * ubuntu@13.60.255.157:/var/www/flask-apache-ubuntu-host
+  when: manual
