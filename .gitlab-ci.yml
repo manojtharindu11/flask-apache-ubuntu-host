@@ -13,8 +13,9 @@ push_to_vm:
   script:
     - |
       ssh -o StrictHostKeyChecking=no ubuntu@13.60.255.157 << 'EOF'
-        set -e  # Exit on any failure
-        echo '[+] Connected to server.'
+        set -e  # Exit on any error
+
+        echo '[✓] Connected to server.'
 
         REPO_DIR="/var/www/flask-apache-ubuntu-host"
         REPO_URL="git@gitlab.com:manojtharindu11/flask-apache-ubuntu-host.git"
@@ -22,14 +23,16 @@ push_to_vm:
         APACHE_CONF="flask-apache-ubuntu-host.conf"
         APACHE_CONF_PATH="/etc/apache2/sites-available/$APACHE_CONF"
 
-        # Step 1: Clone or pull repository
+        echo '--- Step 1: Clone or Update Repository ---'
         if [ -d "$REPO_DIR" ]; then
           cd "$REPO_DIR" || exit 1
           if [ -d .git ]; then
-            echo '[+] Pulling latest changes...'
+            echo '[+] Git repository found. Pulling latest changes...'
+            git reset --hard
+            git clean -fd
             git pull origin main
           else
-            echo '[!] Not a git repo. Replacing contents...'
+            echo '[!] Not a git repo. Replacing directory...'
             sudo rm -rf "$REPO_DIR"
             git clone "$REPO_URL" "$REPO_DIR"
             cd "$REPO_DIR"
@@ -40,40 +43,51 @@ push_to_vm:
           cd "$REPO_DIR"
         fi
 
-        # Step 2: Set up virtual environment
+        echo '--- Step 2: Setup Python Virtual Environment ---'
         if [ -d "$VENV_DIR" ]; then
-          echo '[+] Virtual environment exists.'
+          echo '[+] Virtual environment found.'
         else
-          echo '[+] Creating virtual environment...'
+          echo '[+] Creating new virtual environment...'
           python3 -m venv "$VENV_DIR"
         fi
 
         echo '[+] Activating virtual environment...'
         source "$VENV_DIR/bin/activate"
 
-        echo '[+] Installing requirements...'
+        echo '[+] Installing dependencies...'
         pip install --upgrade pip
         pip install -r requirements.txt
 
-        echo '[+] Updating Apache config...'
-        sudo cp "$APACHE_CONF" "$APACHE_CONF_PATH"
+        echo '--- Step 3: Configure Apache ---'
+        if [ -f "$APACHE_CONF" ]; then
+          echo '[+] Copying Apache config...'
+          sudo cp "$APACHE_CONF" "$APACHE_CONF_PATH"
+        else
+          echo '[!] Apache config file not found in repo!'
+          exit 1
+        fi
+
+        echo '[+] Enabling required Apache modules and site...'
         sudo a2enmod proxy
         sudo a2enmod proxy_http
         sudo a2ensite "$APACHE_CONF"
 
-        echo '[+] Validating Apache config...'
-        sudo apachectl configtest || exit 1
+        echo '[+] Validating Apache configuration...'
+        sudo apachectl configtest
 
-        echo '[+] Reloading Apache...'
+        echo '[+] Reloading Apache server...'
         sudo systemctl reload apache2
 
+        echo '--- Step 4: Run Gunicorn ---'
+        echo '[+] Creating Gunicorn log directory if needed...'
+        sudo mkdir -p /var/log/gunicorn
+        sudo chown -R ubuntu:ubuntu /var/log/gunicorn
 
-        # Step 4: Start Gunicorn using your script
-        echo '[+] Running Gunicorn via run.sh...'
+        echo '[+] Making run.sh executable and running it...'
         chmod +x run.sh
         ./run.sh
 
-        echo '[✓] Deployment finished.'
+        echo '[✓] Deployment completed successfully.'
       EOF
   only:
     - main
