@@ -42,8 +42,8 @@ deploy:
             git pull origin main && echo 'Pulled latest changes!'
           else
             echo "Directory exists but is not a git repo, cloning fresh..."
-            sudo rm -rf /var/www/flask-apache-ubuntu-host/*
-            git clone git@gitlab.com:manojtharindu11/flask-apache-ubuntu-host.git /var/www/flask-apache-ubuntu-host
+            cd /var/www/flask-apache-ubuntu-host
+            git pull origin main
           fi
         else
           echo "Directory does not exist, cloning repo..."
