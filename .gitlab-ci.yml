@@ -18,21 +18,21 @@
 #   stage: test
 #   script:
 #     - test -f build/test.txt
+image: ubuntu:latest
+
 stages:
   - deploy
 
-deploy_to_vm:
+deploy:
   stage: deploy
-  image: alpine:latest
   before_script:
-    - apk add --no-cache openssh
-    - echo "$SSH_PRIVATE_KEY" | head -n 5
-    - echo "$SSH_PRIVATE_KEY" > private_key
-    - echo private_key
-    - chmod 600 private_key
+    - apt-get update && apt-get install -y openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H <EC2-PUBLIC-IP> >> ~/.ssh/known_hosts
   script:
-    - echo "Testing SSH connection..."
-    - ssh -o StrictHostKeyChecking=no -i private_key ubuntu@13.60.255.157 'echo "✅ Connected to server!"'
+    - scp -r * ubuntu@<EC2-PUBLIC-IP>:/var/www/html/
   only:
     - main
 
