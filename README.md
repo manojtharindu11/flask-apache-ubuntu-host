@@ -16,7 +16,7 @@ This technical document outlines the complete process of deploying a Flask appli
 ### 1. SSH into your EC2 instance
 
 ```bash
-ssh -i "flask-cloud.pem" ubuntu@13.245.118.72
+ssh -i "flask-cloud.pem" ubuntu@<ip-address>
 ```
 
 ### 2. Update system packages
