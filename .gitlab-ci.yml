@@ -28,11 +28,12 @@ deploy:
   before_script:
     - apt-get update && apt-get install -y openssh-client
     - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan -H 13.60.255.157 >> ~/.ssh/known_hosts
   script:
-    - scp -r * ubuntu@13.60.255.157:/var/www/flask-apache-ubuntu-host/
+    - scp -o StrictHostKeyChecking=no -r * ubuntu@13.60.255.157:/var/www/flask-apache-ubuntu-host/
   only:
     - main
-
