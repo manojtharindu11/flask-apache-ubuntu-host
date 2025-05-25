@@ -55,18 +55,18 @@ push_to_vm:
         pip install --upgrade pip
         pip install -r requirements.txt
 
-        # Step 3: Setup Apache (if not configured)
-        if [ ! -f "$APACHE_CONF_PATH" ]; then
-          echo '[+] Setting up Apache config...'
-        else
-          echo '[+] Apache config exists, updating...'
-        fi
-
+        echo '[+] Updating Apache config...'
         sudo cp "$APACHE_CONF" "$APACHE_CONF_PATH"
         sudo a2enmod proxy
         sudo a2enmod proxy_http
         sudo a2ensite "$APACHE_CONF"
+
+        echo '[+] Validating Apache config...'
+        sudo apachectl configtest || exit 1
+
+        echo '[+] Reloading Apache...'
         sudo systemctl reload apache2
+
 
         # Step 4: Start Gunicorn using your script
         echo '[+] Running Gunicorn via run.sh...'
