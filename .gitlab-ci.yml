@@ -24,15 +24,14 @@ stages:
 deploy_to_vm:
   stage: deploy
   image: alpine:latest
-  script:
+  before_script:
     - apk add --no-cache openssh
     - echo "$SSH_PRIVATE_KEY" > private_key
     - chmod 600 private_key
-    - ssh -o StrictHostKeyChecking=no -i private_key ubuntu@13.60.255.157 '
-        cd /var/www/flask-apache-ubuntu-host &&
-        git pull &&
-        source venv/bin/activate &&
-        sudo systemctl restart apache2
-      '
+  script:
+    # - ssh -o StrictHostKeyChecking=no -i private_key ubuntu@13.60.255.157 'cd /var/www/flask-apache-ubuntu-host && git pull && source venv/bin/activate && sudo systemctl restart apache2'
+    - ssh -o StrictHostKeyChecking=no -i private_key ubuntu@13.60.255.157
+    - echo "Deploying to VM..."
+    - echo "Running commands on remote server..."
   when: manual
 
