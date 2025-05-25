@@ -25,6 +25,8 @@ mkdir ~/flaskapp
 cd ~/flaskapp
 python3 -m venv venv
 
+
+test gitlab ci
 # stages:
 #   - build
 #   - test
