@@ -30,9 +30,9 @@ deploy:
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan -H <EC2-PUBLIC-IP> >> ~/.ssh/known_hosts
+    - ssh-keyscan -H 13.60.255.157 >> ~/.ssh/known_hosts
   script:
-    - scp -r * ubuntu@<EC2-PUBLIC-IP>:/var/www/html/
+    - scp -r * ubuntu@13.60.255.157:/var/www/flask-apache-ubuntu-host/
   only:
     - main
 
