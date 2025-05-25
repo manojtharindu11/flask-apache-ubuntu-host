@@ -18,27 +18,17 @@
 #   stage: test
 #   script:
 #     - test -f build/test.txt
-image: ubuntu:latest
-
 stages:
   - deploy
 
-deploy:
+deploy_to_vm:
   stage: deploy
-  before_script:
-    - apt-get update && apt-get install -y openssh-client
-    - mkdir -p ~/.ssh
-    # Debug: check if SSH_PRIVATE_KEY is set (will only show if it exists, not the content)
-    - '[[ ! -z "$SSH_PRIVATE_KEY" ]] && echo "SSH_PRIVATE_KEY is set" || echo "SSH_PRIVATE_KEY is not set"'
-    # Ensure the key is in the correct format and remove any extra spaces/newlines
-    - echo "$SSH_PRIVATE_KEY" | sed 's/\\n/\n/g' | tr -d '\r' > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    # Debug: check the format of the key
-    - head -n 1 ~/.ssh/id_rsa
-    - eval $(ssh-agent -s)
-    - ssh-add -v ~/.ssh/id_rsa
-    - ssh-keyscan -H 13.60.255.157 >> ~/.ssh/known_hosts
+  image: alpine:latest
   script:
-    - scp -o StrictHostKeyChecking=no -r * ubuntu@13.60.255.157:/var/www/flask-apache-ubuntu-host/
-  only:
-    - main
+    - apk add --no-cache openssh
+    - echo "$SSH_PRIVATE_KEY" > private_key
+    - chmod 600 private_key
+    - ssh -o StrictHostKeyChecking=no -i private_key ubuntu@13.60.255.157 'cd /var/www/flask-apache-ubuntu-host && git pull && source venv/bin/activate && sudo systemctl restart apache2'
+
+  when: manual
+
