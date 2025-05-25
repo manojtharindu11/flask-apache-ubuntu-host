@@ -34,4 +34,3 @@ deploy_to_vm:
     - ssh -o StrictHostKeyChecking=no -i private_key ubuntu@13.60.255.157 'echo "✅ Connected to server!"'
   when: manual
 
-
