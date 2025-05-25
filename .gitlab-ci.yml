@@ -32,6 +32,6 @@ deploy:
     - chmod 600 id_rsa
     - ssh-add id_rsa
   script:
-    - ssh -o StrictHostKeyChecking=no ubuntu@13.60.255.157 'cd /var/www/flask-apache-ubuntu-host && git pull && source venv/bin/activate && sudo systemctl restart apache2'
+    - ssh -o StrictHostKeyChecking=no ubuntu@13.60.255.157 "echo 'Hello, World!'"
 
 
