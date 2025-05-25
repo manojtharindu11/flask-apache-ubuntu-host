@@ -24,3 +24,24 @@ sudo apt install python3 python3-pip python3-venv -y
 mkdir ~/flaskapp
 cd ~/flaskapp
 python3 -m venv venv
+
+# stages:
+#   - build
+#   - test
+
+# create_file:
+#   image: alpine
+#   stage: build
+#   script:
+#     - echo "Creating a file ..."
+#     - mkdir build
+#     - touch build/test.txt
+#   artifacts:
+#     paths:
+#       - build/
+
+# test_file:
+#   image: alpine
+#   stage: test
+#   script:
+#     - test -f build/test.txt

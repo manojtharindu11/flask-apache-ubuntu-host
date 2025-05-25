@@ -1,24 +1,3 @@
-# stages:
-#   - build
-#   - test
-
-# create_file:
-#   image: alpine
-#   stage: build
-#   script:
-#     - echo "Creating a file ..."
-#     - mkdir build
-#     - touch build/test.txt
-#   artifacts:
-#     paths:
-#       - build/
-
-# test_file:
-#   image: alpine
-#   stage: test
-#   script:
-#     - test -f build/test.txt
-
 stages:
   - push
 
@@ -26,7 +5,7 @@ push_to_vm:
   stage: push
   image: alpine:latest
   before_script:
-    - apk add --no-cache openssh-client git
+    - apk add --no-cache openssh-client git bash
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" > id_rsa
     - chmod 600 id_rsa
@@ -34,47 +13,67 @@ push_to_vm:
   script:
     - |
       ssh -o StrictHostKeyChecking=no ubuntu@13.60.255.157 << 'EOF'
-        echo 'Connected, Success!'
-        if [ -d /var/www/flask-apache-ubuntu-host ]; then
-          cd /var/www/flask-apache-ubuntu-host || exit 1
+        set -e  # Exit on any failure
+        echo '[+] Connected to server.'
+
+        REPO_DIR="/var/www/flask-apache-ubuntu-host"
+        REPO_URL="git@gitlab.com:manojtharindu11/flask-apache-ubuntu-host.git"
+        VENV_DIR=".venv"
+        APACHE_CONF="flask-apache-ubuntu-host.conf"
+        APACHE_CONF_PATH="/etc/apache2/sites-available/$APACHE_CONF"
+
+        # Step 1: Clone or pull repository
+        if [ -d "$REPO_DIR" ]; then
+          cd "$REPO_DIR" || exit 1
           if [ -d .git ]; then
-            echo "Git repo found, pulling latest changes..."
-            git pull origin main && echo 'Pulled latest changes!'
+            echo '[+] Pulling latest changes...'
+            git pull origin main
           else
-            echo "Directory exists but is not a git repo, cloning fresh..."
-            sudo rm -rf /var/www/flask-apache-ubuntu-host/*
-            git clone git@gitlab.com:manojtharindu11/flask-apache-ubuntu-host.git /var/www/flask-apache-ubuntu-host
+            echo '[!] Not a git repo. Replacing contents...'
+            sudo rm -rf "$REPO_DIR"
+            git clone "$REPO_URL" "$REPO_DIR"
+            cd "$REPO_DIR"
           fi
         else
-          echo "Directory does not exist, cloning repo..."
-          git clone git@gitlab.com:manojtharindu11/flask-apache-ubuntu-host.git /var/www/flask-apache-ubuntu-host
+          echo '[+] Cloning repository...'
+          git clone "$REPO_URL" "$REPO_DIR"
+          cd "$REPO_DIR"
         fi
-        if [ -d .venv]; then
-          echo "Virtual environment exists, activating..."
-          source .venv/bin/activate
+
+        # Step 2: Set up virtual environment
+        if [ -d "$VENV_DIR" ]; then
+          echo '[+] Virtual environment exists.'
         else
-          echo "Virtual environment does not exist, creating..."
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements.txt
+          echo '[+] Creating virtual environment...'
+          python3 -m venv "$VENV_DIR"
         fi
-        if [ -f /etc/apache2/sites-available/flask-apache-ubuntu-host.conf ]; then
-          echo "Apache config exists, reloading..."
-          sudo cp flask-apache-ubuntu-host.conf /etc/apache2/sites-available/
-          sudo a2enmod proxy
-          sudo a2enmod proxy_http
-          sudo a2ensite flask-apache-ubuntu-host.conf
-          sudo systemctl reload apache2
+
+        echo '[+] Activating virtual environment...'
+        source "$VENV_DIR/bin/activate"
+
+        echo '[+] Installing requirements...'
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+        # Step 3: Setup Apache (if not configured)
+        if [ ! -f "$APACHE_CONF_PATH" ]; then
+          echo '[+] Setting up Apache config...'
         else
-          echo "Apache config does not exist, setting up..."
-          sudo cp flask-apache-ubuntu-host.conf /etc/apache2/sites-available/
-          sudo a2enmod proxy
-          sudo a2enmod proxy_http
-          sudo a2ensite flask-apache-ubuntu-host.conf
-          sudo systemctl reload apache2
+          echo '[+] Apache config exists, updating...'
         fi
-        cd /var/www/flask-apache-ubuntu-host
-        gunicorn --bind 127.0.0.1:8000 wsgi:app
+
+        sudo cp "$APACHE_CONF" "$APACHE_CONF_PATH"
+        sudo a2enmod proxy
+        sudo a2enmod proxy_http
+        sudo a2ensite "$APACHE_CONF"
+        sudo systemctl reload apache2
+
+        # Step 4: Start Gunicorn using your script
+        echo '[+] Running Gunicorn via run.sh...'
+        chmod +x run.sh
+        ./run.sh
+
+        echo '[✓] Deployment finished.'
       EOF
   only:
     - main
