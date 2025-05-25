@@ -58,6 +58,23 @@ push_to_vm:
           source .venv/bin/activate
           pip install -r requirements.txt
         fi
+        if [ -f /etc/apache2/sites-available/flask-apache-ubuntu-host.conf ]; then
+          echo "Apache config exists, reloading..."
+          sudo cp flask-apache-ubuntu-host.conf /etc/apache2/sites-available/
+          sudo a2enmod proxy
+          sudo a2enmod proxy_http
+          sudo a2ensite flask-apache-ubuntu-host.conf
+          sudo systemctl reload apache2
+        else
+          echo "Apache config does not exist, setting up..."
+          sudo cp flask-apache-ubuntu-host.conf /etc/apache2/sites-available/
+          sudo a2enmod proxy
+          sudo a2enmod proxy_http
+          sudo a2ensite flask-apache-ubuntu-host.conf
+          sudo systemctl reload apache2
+        fi
+        cd /var/www/flask-apache-ubuntu-host
+        gunicorn --bind 127.0.0.1:8000 wsgi:app
       EOF
   only:
     - main
