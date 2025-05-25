@@ -35,9 +35,23 @@ deploy:
     - |
       ssh -o StrictHostKeyChecking=no ubuntu@13.60.255.157 << 'EOF'
         echo 'Connected, Success!'
-        cd /var/www/flask-apache-ubuntu-host
-        git pull origin main && echo 'Pulled latest changes!'
+        if [ -d /var/www/flask-apache-ubuntu-host ]; then
+          echo "Directory exists"
+          cd /var/www/flask-apache-ubuntu-host || exit 1
+          if [ -d .git ]; then
+            echo "Git repo found, pulling latest changes..."
+            git pull origin main && echo 'Pulled latest changes!'
+          else
+            echo "Error: Not a git repository!"
+            exit 1
+          fi
+        else
+          echo "Error: Directory does not exist!"
+          exit 1
+        fi
       EOF
+  only:
+    - main
 
 
 
