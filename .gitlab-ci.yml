@@ -89,5 +89,7 @@ push_to_vm:
 
         echo '[✓] Deployment completed successfully.'
       EOF
+  when:
+    - manual
   only:
     - main
